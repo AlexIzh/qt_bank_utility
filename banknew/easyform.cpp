@@ -5,7 +5,8 @@
 #include "dialog.h"
 #include "QSqlQuery"
 #include <QDateTime>
-
+#include <QFile>
+#include <QTextCodec>
 easyForm::easyForm(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::easyForm)
@@ -13,14 +14,34 @@ easyForm::easyForm(QWidget *parent) :
     ui->setupUi(this);
     ui->tableWidget->setRowCount(3);
 
-    ui->sumDigEdit1->setDisabled(true);
 
+
+
+    ui->sumDigEdit1->setDisabled(true);
+    QFile file("sprav.txt");
+
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+            return;
+
+
+    QTextStream stream(&file);
+    QTextCodec *codec = QTextCodec::codecForName("cp1251");
+    stream.setCodec(codec);
+    while (!stream.atEnd()){
+        m_spravList.append(stream.readLine());
+    }
+
+    qDebug() << "spravochnik" << m_spravList << endl;
 
     for (int i = 0; i < ui->tableWidget->rowCount(); i++)
         for (int j = 0; j < 2; j++){
         QTableWidgetItem *p = new QTableWidgetItem;
         ui->tableWidget->setItem(i,j,p);
     }
+    connect(ui->bankTrBIKEdit, SIGNAL(textEdited(QString)), SLOT(checkOccasion(QString)));
+    connect(ui->bankRecBIKEDit, SIGNAL(textEdited(QString)), SLOT(checkOccasion(QString)));
+
     connect(ui->pushButton, SIGNAL(clicked()), SLOT(draw()));
 
     connect(ui->tableWidget, SIGNAL(itemChanged(QTableWidgetItem*)), SLOT(onItemChanged(QTableWidgetItem*)));
@@ -299,7 +320,18 @@ void easyForm::draw(){
 
 }
 
-
+void easyForm::checkOccasion(QString text){
+    if (text.length() == 9)
+    foreach(QString str, m_spravList){
+        if (str.contains(text)){
+            str.remove(text);
+             if ((QObject::sender() == ui->bankTrBIKEdit))
+                 ui->bankTrEdit->setText(str);
+                else if (QObject::sender() == ui->bankRecBIKEDit)
+                 ui->bankRecEdit->setText(str);
+        }
+    }
+}
 
 
 easyForm::~easyForm()
