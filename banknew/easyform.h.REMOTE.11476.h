@@ -33,7 +33,6 @@ private slots:
     void onItemChanged(QTableWidgetItem* item);
     void validate(QString text);
     bool createTables();
-    bool clearTables();
     void checkOccasion(QString text);
 };
 

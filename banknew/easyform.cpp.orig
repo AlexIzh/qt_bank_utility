@@ -5,18 +5,24 @@
 #include "dialog.h"
 #include "QSqlQuery"
 #include <QDateTime>
+<<<<<<< HEAD
 #include "QSqlError"
 #include "QDir"
 #include "QList"
 
+=======
 #include <QFile>
 #include <QTextCodec>
+>>>>>>> 7cb8ad9c7bbdc1bd6aefdf737fb38f39b034947a
 easyForm::easyForm(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::easyForm)
 {
     ui->setupUi(this);
     ui->tableWidget->setRowCount(3);
+
+
+
 
     ui->sumDigEdit1->setDisabled(true);
     QFile file("sprav.txt");

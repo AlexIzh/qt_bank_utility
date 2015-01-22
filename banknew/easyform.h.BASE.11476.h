@@ -26,15 +26,12 @@ private:
     Ui::easyForm *ui;
     QSqlDatabase db;
     QIntValidator *validator;
-    QList<QString> m_spravList;
 private slots:
     void draw();
     void loadDB();
     void onItemChanged(QTableWidgetItem* item);
     void validate(QString text);
     bool createTables();
-    bool clearTables();
-    void checkOccasion(QString text);
 };
 
 #endif // EASYFORM_H
