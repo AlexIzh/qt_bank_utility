@@ -13,6 +13,10 @@ QListWidget *Dialog::list() {
     return ui->listWidget;
 }
 
+QDialogButtonBox *Dialog::box() {
+    return ui->buttonBox;
+}
+
 Dialog::~Dialog()
 {
     delete ui;

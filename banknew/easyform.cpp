@@ -5,6 +5,9 @@
 #include "dialog.h"
 #include "QSqlQuery"
 #include <QDateTime>
+#include "QSqlError"
+#include "QDir"
+#include "QList"
 
 easyForm::easyForm(QWidget *parent) :
     QWidget(parent),
@@ -38,52 +41,78 @@ easyForm::easyForm(QWidget *parent) :
     //auto fill
     ui->fromNumEdit->setText("202028101");
 
-    db = QSqlDatabase::addDatabase("QMYSQL", "mydb");
-    db.setHostName("bigblue");
-    db.setDatabaseName("flightdb");
-    db.setUserName("acarlson");
-    db.setPassword("1uTbSbAs");
-    if (db.isValid()) {
-       db.open();
-       this->createTables();
+    db = QSqlDatabase::addDatabase("QSQLITE");
+       db.setHostName("localhost");
+       db.setUserName("root");
+       db.setPassword("sdg2101zmv");
+       db.setDatabaseName("__db__");
+    if (!db.isValid()){
+      qDebug() << db.lastError().text();
+      return;
     }
+    if (!db.open()) {
+        qDebug() << db.lastError().text();
+        return;
+    }
+    QString query = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '__db__'";
+    QSqlQuery q = db.exec(query);
+
+    if (q.size() == 0){
+        db.exec("CREATE DATABASE IF NOT EXISTS __db__");
+
+        qDebug() << db.lastError().text();
+
+    }
+//    this->clearTables();
+    this->createTables();
+}
+
+
+bool easyForm::clearTables() {
+    bool result = true;
+    if (db.isOpen()) {
+        db.exec("drop table tables");
+        db.exec("drop table vals");
+        db.exec("drop table summs");
+    }
+    return result;
 }
 
 bool easyForm::createTables()
     {
     // Create table "person"
-    bool ret = false;
+    bool ret = true;
     if (db.isOpen())
         {
-        QSqlQuery query1;
-        ret = query1.exec("create table tables "
+//        QSqlQuery query1;
+        this->db.exec("create table tables "
                   "(id integer primary key, "
                   "name varchar(20))");
-        QSqlQuery query2;
-        ret = query2.exec("create table summs "
+//        QSqlQuery query2;
+        this->db.exec("create table summs "
                   "(id integer primary key, "
+                   "save_id integer,"
                   "symbol varchar(2),"
-                  "save_id integer,"
                   "summ varchar(20))");
-        QSqlQuery query3;
-        ret = query3.exec("create table values "
+        this->db.exec("create table vals "
                   "(id integer primary key, "
                   "order_number varchar(20),"
                   "date varchar(20),"
-                  "from varchar(20),"
+                  "from_ varchar(20),"
                   "acc_number_from varchar(20),"
-                  "to varchar(20),"
+                  "to_ varchar(20),"
                   "acc_number_to varchar(20),"
                   "inn varchar(20),"
                   "acc_number varchar(20),"
                   "name_bank_from varchar(20),"
-                  "BINK_bank_from varchar(20),"
+                  "BIK_bank_from varchar(20),"
                   "name_bank_to varchar(20),"
-                  "BINK_bank_to varchar(20),"
+                  "BIK_bank_to varchar(20),"
                   "summ_string varchar(20),"
                   "source varchar(20),"
                   "summ_number varchar(20),"
                   "save_id integer)");
+        qDebug()<<db.lastError();
         }
     return ret;
     }
@@ -91,6 +120,72 @@ bool easyForm::createTables()
 void easyForm::loadDB() {
     Dialog *p = new Dialog(NULL);
     p->show();
+    QSqlQuery query1;
+    query1 = db.exec("select id, name from tables");
+    QStringList list;
+    while (query1.next()) {
+        int id = query1.value(0).toInt();
+        QString name = query1.value(1).toString();
+        QString string = QString("'%1': '%2'").arg(id).arg(name);
+        list << string;
+        qDebug() << string << " ";
+    }
+
+    p->list()->insertItems(list.size(),list);
+
+    connect(p->box(), &QDialogButtonBox::accepted, [=]() {
+        QList<QListWidgetItem*> result = p->list()->selectedItems();
+        if (result.size() > 0) {
+            int index = p->list()->currentIndex().row();
+            int id = index + 1;
+            QString string = QString("select * from vals where save_id=%1").arg(id);
+            qDebug() << string;
+            QSqlQuery query = db.exec(string);
+            qDebug() << query.size()<<endl;
+            if (query.size()<0) {
+                ui->orderNumEdit->setText("0");
+                ui->dateEdit->setDate(QDate::fromString("0", NULL));
+                ui->fromEdit->setText("0");
+                ui->fromNumEdit->setText("0");
+                ui->receiverEdit->setText("0");
+                ui->receiverNumEdit->setText("0");
+                ui->INNEdit->setText("0");
+                ui->bankNumEdit->setText("0");
+                ui->bankRecEdit->setText("0");
+                ui->bankRecBIKEDit->setText("0");
+                ui->bankTrEdit->setText("0");
+                ui->bankTrBIKEdit->setText("0");
+                ui->sumLitEdit->setText("0");
+                ui->incomeEdit->setText("0");
+                ui->sumDigEdit1->setText("0");
+            }
+            while (query.next()) {
+                int id = query.value(0).toInt();
+                ui->orderNumEdit->setText(query.value("order_number").toString());
+                ui->dateEdit->setDate(QDate::fromString(query.value("date").toString(), NULL));
+                ui->fromEdit->setText(query.value("from_").toString());
+                ui->fromNumEdit->setText(query.value("acc_number_from").toString());
+                ui->receiverEdit->setText(query.value("to_").toString());
+                ui->receiverNumEdit->setText(query.value("acc_number_to").toString());
+                ui->INNEdit->setText(query.value("inn").toString());
+                ui->bankNumEdit->setText(query.value("acc_number").toString());
+                ui->bankRecEdit->setText(query.value("name_bank_from").toString());
+                ui->bankRecBIKEDit->setText(query.value("BIK_bank_from").toString());
+                ui->bankTrEdit->setText(query.value("name_bank_to").toString());
+                ui->bankTrBIKEdit->setText(query.value("BIK_bank_to").toString());
+                ui->sumLitEdit->setText(query.value("summ_string").toString());
+                ui->incomeEdit->setText(query.value("source").toString());
+                ui->sumDigEdit1->setText(query.value("summ_number").toString());
+            }
+            query = db.exec(QString("select id,symbol, summ  from summs where save_id = %1").arg(id));
+            int i = 0;
+            while (query.next() || i < 3) {
+                ui->tableWidget->item(i,0)->setText(query.value(1).toString());
+                ui->tableWidget->item(i,1)->setText(query.value(2).toString());
+                i++;
+            }
+        }
+       });
 }
 
 
@@ -271,31 +366,23 @@ void easyForm::draw(){
     PixMapForm *p = new PixMapForm(NULL, m_image );
     p->show();
 
-    QSqlQuery query;
-//    QString date = Qt.formatDateTime(new Date(), "ddMMyy hh:mm:ss");
-//    ret = query.exec(QString("select name, id from tables where name='%1'")
-//            .arg(date));
-//
-    int id_ = -1;
-//    while (query.next()) {
-//         id_ = query.value(1).toInt();
-//       }
-    if (id_ == -1) {
-        query.exec(QString("insert into tables values(NULL,'%1')")
+    QSqlQuery query = db.exec(QString("insert into tables values(NULL,'%1')")
             .arg(QDateTime::currentDateTime().toString()));
-         id_ = query.lastInsertId().toInt();
-    }
-    query.exec(QString("insert into values (NULL, '%1','%2','%3','%4','%5','%6','%7','%8','%9','%10','%11','%12','%13','%14','%15','%16')")
+    int id_ = query.lastInsertId().toInt();
+    QString first_string = QString("insert into vals values(NULL, '%1','%2','%3','%4','%5','%6','%7','%8','%9','%10','%11','%12','%13','%14','%15',%16)")
             .arg(ui->orderNumEdit->text()).arg(ui->dateEdit->text()).arg(ui->fromEdit->text()).arg(ui->fromNumEdit->text()).arg(ui->receiverEdit->text())
                .arg(ui->receiverNumEdit->text()).arg(ui->INNEdit->text()).arg(ui->bankNumEdit->text())
                .arg(ui->bankTrEdit->text()).arg(ui->bankTrBIKEdit->text()).arg(ui->bankRecEdit->text()).arg(ui->bankRecBIKEDit->text())
-               .arg(ui->sumLitEdit->text()).arg(ui->incomeEdit->text()).arg(ui->sumDigEdit1->text()).arg(id_));
-    query.exec(QString("insert into summs (NULL, %1, %2, %3)").arg(ui->tableWidget->item(0,0)->text())
-               .arg(id_).arg(ui->tableWidget->item(0,1)->text()));
-    query.exec(QString("insert into summs (NULL, %1, %2, %3)").arg(ui->tableWidget->item(1,0)->text())
-                       .arg(id_).arg(ui->tableWidget->item(1,1)->text()));
-    query.exec(QString("insert into summs (NULL, %1, %2, %3)").arg(ui->tableWidget->item(2,0)->text())
-                       .arg(id_).arg(ui->tableWidget->item(2,1)->text()));
+               .arg(ui->sumLitEdit->text()).arg(ui->incomeEdit->text()).arg(ui->sumDigEdit1->text()).arg(id_);
+    qDebug()<<first_string;
+    db.exec(first_string);
+    qDebug()<<db.lastError();
+    db.exec(QString("insert into summs values(NULL, %1, '%2', '%3')").arg(id_).arg(ui->tableWidget->item(0,0)->text())
+               .arg(ui->tableWidget->item(0,1)->text()));
+    db.exec(QString("insert into summs values(NULL, %1, '%2', '%3')").arg(id_).arg(ui->tableWidget->item(1,0)->text())
+                       .arg(ui->tableWidget->item(1,1)->text()));
+    db.exec(QString("insert into summs values(NULL, %1, '%2', '%3')").arg(id_).arg(ui->tableWidget->item(2,0)->text())
+                       .arg(ui->tableWidget->item(2,1)->text()));
 
 }
 

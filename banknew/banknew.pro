@@ -12,9 +12,9 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = banknew
 TEMPLATE = app
-
+CONFIG += c++11
 APP_IMAGE_FILES.files = 1.jpg
-
+APP_IMAGE_FILES.files += __db__
 APP_IMAGE_FILES.path = Contents/MacOS
 
 QMAKE_BUNDLE_DATA += APP_IMAGE_FILES
@@ -36,4 +36,5 @@ FORMS    += mainwindow.ui \
     dialog.ui
 
 DISTFILES += \
-    1.jpg
+    1.jpg \
+    __db__

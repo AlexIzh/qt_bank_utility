@@ -32,6 +32,7 @@ private slots:
     void onItemChanged(QTableWidgetItem* item);
     void validate(QString text);
     bool createTables();
+    bool clearTables();
 };
 
 #endif // EASYFORM_H

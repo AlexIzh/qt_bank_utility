@@ -4,6 +4,7 @@
 #include <QDialog>
 #include "QSqlDatabase"
 #include "QListWidget"
+#include "QDialogButtonBox"
 
 namespace Ui {
 class Dialog;
@@ -17,6 +18,7 @@ public:
     explicit Dialog(QWidget *parent = 0);
     ~Dialog();
     QListWidget *list();//readonly
+    QDialogButtonBox *box();//readonly
 private:
     Ui::Dialog *ui;
     QSqlDatabase db;
