@@ -8,6 +8,7 @@
 #include "QSqlError"
 #include "QDir"
 #include "QList"
+#include "QCompleter"
 
 #include <QFile>
 #include <QTextCodec>
@@ -29,19 +30,35 @@ easyForm::easyForm(QWidget *parent) :
     QTextStream stream(&file);
     QTextCodec *codec = QTextCodec::codecForName("cp1251");
     stream.setCodec(codec);
-    while (!stream.atEnd()){
-        m_spravList.append(stream.readLine());
-    }
 
-    qDebug() << "spravochnik" << m_spravList << endl;
+    QList<QString> lines;
+    while (!stream.atEnd()){
+        QString line = stream.readLine();
+        BIKModel model;
+        model.bik = line.right(9);
+        model.nameBank = line.left(line.size()-9);
+        m_spravList.append(model);
+        lines.append(line);
+    }
+    QCompleter *completer = new QCompleter(lines, this);
+    completer->setCaseSensitivity(Qt::CaseInsensitive);
+    completer->setFilterMode(Qt::MatchContains);
+    connect(completer, SIGNAL(activated(QString)), SLOT(activateCompleter(QString)));
+
+    ui->bankRecBIKEDit->setCompleter(completer);
+    ui->bankTrBIKEdit->setCompleter(completer);
+    QValidator *v = new QIntValidator(0, 999999999, this);
+    ui->bankRecBIKEDit->setValidator(v);
+    ui->bankTrBIKEdit->setValidator(v);
+//    qDebug() << "spravochnik" <<  m_spravList << endl;
 
     for (int i = 0; i < ui->tableWidget->rowCount(); i++)
         for (int j = 0; j < 2; j++){
         QTableWidgetItem *p = new QTableWidgetItem;
         ui->tableWidget->setItem(i,j,p);
     }
-    connect(ui->bankTrBIKEdit, SIGNAL(textEdited(QString)), SLOT(checkOccasion(QString)));
-    connect(ui->bankRecBIKEDit, SIGNAL(textEdited(QString)), SLOT(checkOccasion(QString)));
+    connect(ui->bankTrBIKEdit, SIGNAL(textChanged(QString)), SLOT(checkOccasion(QString)));
+    connect(ui->bankRecBIKEDit, SIGNAL(textChanged(QString)), SLOT(checkOccasion(QString)));
 
     connect(ui->pushButton, SIGNAL(clicked()), SLOT(draw()));
 
@@ -55,6 +72,7 @@ easyForm::easyForm(QWidget *parent) :
     connect(ui->fromNumEdit, SIGNAL(textChanged(QString)), SLOT(validate(QString)));
     ui->fromNumEdit->setValidator(validator);
     ui->orderNumEdit->setFocus();
+
 
 
     //auto fill
@@ -406,18 +424,38 @@ void easyForm::draw(){
 }
 
 void easyForm::checkOccasion(QString text){
+    if (text.length()>9) {
+        QString bik = text.right(9);
+        if ((QObject::sender() == ui->bankTrBIKEdit))
+            ui->bankTrBIKEdit->setText(bik);
+        else
+            ui->bankRecBIKEDit->setText(bik);
+    }
     if (text.length() == 9)
-    foreach(QString str, m_spravList){
+    foreach(BIKModel model, m_spravList){
+        QString str = model.bik;
         if (str.contains(text)){
             str.remove(text);
              if ((QObject::sender() == ui->bankTrBIKEdit))
-                 ui->bankTrEdit->setText(str);
+                 ui->bankTrEdit->setText(model.nameBank.trimmed());
                 else if (QObject::sender() == ui->bankRecBIKEDit)
-                 ui->bankRecEdit->setText(str);
+                 ui->bankRecEdit->setText(model.nameBank.trimmed());
         }
     }
 }
 
+void easyForm::activateCompleter(QString text) {
+    QString bik = text.right(9);
+    QString nameBank = text.left(text.size()-9);
+    if (((QCompleter*)QObject::sender())->widget() == ui->bankRecBIKEDit) {
+        ui->bankRecBIKEDit->setText(bik);
+        ui->bankRecEdit->setText(nameBank.trimmed());
+    } else {
+        ui->bankTrBIKEdit->setText(bik);
+        ui->bankTrEdit->setText(nameBank.trimmed());
+    }
+//((QCompleter*)QObject::sender())->setCurrentRow(-1);
+}
 
 easyForm::~easyForm()
 {

@@ -13,6 +13,12 @@ namespace Ui {
 class easyForm;
 }
 
+class BIKModel {
+public:
+    QString bik;
+    QString nameBank;
+};
+
 class easyForm : public QWidget
 {
     Q_OBJECT
@@ -26,7 +32,7 @@ private:
     Ui::easyForm *ui;
     QSqlDatabase db;
     QIntValidator *validator;
-    QList<QString> m_spravList;
+    QList<BIKModel> m_spravList;
 private slots:
     void draw();
     void loadDB();
@@ -35,6 +41,7 @@ private slots:
     bool createTables();
     bool clearTables();
     void checkOccasion(QString text);
+    void activateCompleter(QString text);
 };
 
 #endif // EASYFORM_H
