@@ -33,6 +33,7 @@ private:
     QSqlDatabase db;
     QIntValidator *validator;
     QList<BIKModel> m_spravList;
+    QList<QString> m_symbols;
 private slots:
     void draw();
     void loadDB();

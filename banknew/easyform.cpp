@@ -40,6 +40,21 @@ easyForm::easyForm(QWidget *parent) :
         m_spravList.append(model);
         lines.append(line);
     }
+
+    QFile symbols_file("symbols.txt");
+    if (!symbols_file.open(QIODevice::ReadOnly | QIODevice::Text))
+            return;
+
+
+    QTextStream stream__(&symbols_file);
+//    stream__.setCodec(codec);
+
+    while (!stream__.atEnd()){
+        QString line = stream__.readLine();
+        m_symbols.append(line);
+    }
+
+
     QCompleter *completer = new QCompleter(lines, this);
     completer->setCaseSensitivity(Qt::CaseInsensitive);
     completer->setFilterMode(Qt::MatchContains);
@@ -250,6 +265,19 @@ void easyForm::onItemChanged(QTableWidgetItem *item){
             int part = ui->tableWidget->item(i,1)->text().toInt(&ok);
             sum += (ok ? part: 0);
             ui->sumDigEdit1->setText(QString::number(sum));
+        }
+    } else if (item->column() == 0) {
+        qDebug() << m_symbols;
+        bool contains = false;
+        foreach (QString str, m_symbols) {
+            QString code = str.trimmed().right(2);
+            if (item->text() == code) {
+                item->setToolTip(str.trimmed().left(str.trimmed().size()-2).trimmed());
+                contains = true;
+            }
+        }
+        if (!contains) {
+            item->setText("");
         }
     }
 
